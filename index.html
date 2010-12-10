@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; rapidsms-xforms v0.1 documentation</title>
+    <title>Introduction &mdash; rapidsms-xforms v0.3.0 documentation</title>
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '0.1',
+        VERSION:     '0.3.0',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="rapidsms-xforms v0.1 documentation" href="#" />
+    <link rel="top" title="rapidsms-xforms v0.3.0 documentation" href="#" />
     <link rel="next" title="XForm Fields" href="fields.html" /> 
   </head>
   <body>
@@ -32,7 +32,7 @@
         <li class="right" >
           <a href="fields.html" title="XForm Fields"
              accesskey="N">next</a> |</li>
-        <li><a href="#">rapidsms-xforms v0.1 documentation</a> &raquo;</li> 
+        <li><a href="#">rapidsms-xforms v0.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -40,7 +40,9 @@
             <h3><a href="#">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="#">Introduction</a></li>
-<li><a class="reference external" href="#installation">Installation</a></li>
+<li><a class="reference external" href="#installation-from-cheese-shop">Installation From Cheese Shop</a></li>
+<li><a class="reference external" href="#installation-from-github">Installation From Github</a></li>
+<li><a class="reference external" href="#configuration">Configuration</a></li>
 <li><a class="reference external" href="#building-the-documentation">Building the Documentation</a></li>
 <li><a class="reference external" href="#updating-github-docs">Updating Github Docs</a></li>
 <li><a class="reference external" href="#running-the-tests">Running the Tests</a></li>
@@ -98,29 +100,60 @@
 <dd><a class="reference external" href="http://www.github.com/nyaruka/rapidsms-xforms">http://www.github.com/nyaruka/rapidsms-xforms</a></dd>
 <dt>A little video showing this app in use:</dt>
 <dd><a class="reference external" href="http://www.youtube.com/watch?v=PyjEruT5uoU">http://www.youtube.com/watch?v=PyjEruT5uoU</a></dd>
-<dt>Build by Nyaruka Ltd under contract of UNICEF:</dt>
+<dt>Built by Nyaruka Ltd under contract of UNICEF:</dt>
 <dd><a class="reference external" href="http://www.nyaruka.com">http://www.nyaruka.com</a></dd>
 </dl>
 </div>
-<div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation-from-cheese-shop">
+<h1>Installation From Cheese Shop<a class="headerlink" href="#installation-from-cheese-shop" title="Permalink to this headline">¶</a></h1>
 <p>You can install the latest version of the rapidsms-xforms library straight from the cheese shop:</p>
 <div class="highlight-python"><pre>% pip install rapidsms-xforms</pre>
 </div>
-<p>Then to use xforms, edit your <tt class="docutils literal"><span class="pre">settings.py</span></tt> to add <tt class="docutils literal"><span class="pre">rapidsms_xforms</span></tt> and <tt class="docutils literal"><span class="pre">uni_form</span></tt>:</p>
+<p>You&#8217;ll also need to install django-eav from GitHub, which isn&#8217;t in PyPi just yet:</p>
+<div class="highlight-python"><pre>% pip install -e git+http://github.com/mvpdev/django-eav.git#egg=django-eav</pre>
+</div>
+</div>
+<div class="section" id="installation-from-github">
+<h1>Installation From Github<a class="headerlink" href="#installation-from-github" title="Permalink to this headline">¶</a></h1>
+<p>You can always get the latest version of rapidsms-xforms from github.  Note that the tip of the repo is not guaranteed to be stable.  You should use the verison available via pip unless you have a specific reason not to.</p>
+<p>You can install the requirements using the <tt class="docutils literal"><span class="pre">pip-requires.txt</span></tt> file:</p>
+<div class="highlight-python"><pre>% pip install -r pip-requires.txt</pre>
+</div>
+</div>
+<div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<p>To enable XForms for your project, edit your <tt class="docutils literal"><span class="pre">settings.py</span></tt> to add <tt class="docutils literal"><span class="pre">rapidsms_xforms</span></tt>, <tt class="docutils literal"><span class="pre">eav</span></tt> and <tt class="docutils literal"><span class="pre">uni_form</span></tt>:</p>
 <div class="highlight-python"><pre>INSTALLED_APPS = ( "rapidsms",
                      .. other apps ..
+                   "eav",
                    "uni_form",
                    "rapidsms_xforms" )</pre>
 </div>
 <p>You will probably also want to add XForms as one of the main RapidSMS tabs:</p>
-<div class="highlight-python"><pre>TABS = [
+<div class="highlight-python"><pre>RAPIDSMS_TABS = [
   ('rapidsms.views.dashboard', 'Dashboard'),
       .. other tabs ..
-  ('rapidsms_xforms.views.xforms', 'XForms'),
+  ('xforms', 'XForms')
 ]</pre>
 </div>
-<p>Finally sync your database with <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">syncdb</span></tt>.</p>
+<p>While you are in <tt class="docutils literal"><span class="pre">settings.py</span></tt> might as well change your <tt class="docutils literal"><span class="pre">LOGIN_URL</span></tt> to match RapidSMS&#8217;s:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># set our login url to match RapidSMS&#39;s url patterns</span>
+<span class="n">LOGIN_URL</span> <span class="o">=</span> <span class="s">&quot;/account/login&quot;</span>
+</pre></div>
+</div>
+<p>Finally, include the XForms urls in your project&#8217;s urls.py:</p>
+<div class="highlight-python"><pre>urlpatterns = patterns('',
+   .. other url patterns ..
+   ('', include('rapidsms_xforms.urls'))
+)</pre>
+</div>
+<p>If you are going to use XForms with ODK Collect or another XForms client, you need to specify your host in you settings as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">XFORMS_HOST</span> <span class="o">=</span> <span class="s">&#39;www.rapidsms-server.com&#39;</span>
+</pre></div>
+</div>
+<p>Finally sync your database with:</p>
+<div class="highlight-python"><pre>% python manage.py syncdb</pre>
+</div>
 <p>Once you restart RapidSMS a new tab will created letting you create, manage and view forms and their submissions.</p>
 </div>
 <div class="section" id="building-the-documentation">
@@ -175,6 +208,7 @@ survey +name eric +age 15.4</pre>
 <li class="toctree-l2"><a class="reference external" href="fields.html#decimal-field">Decimal Field</a></li>
 <li class="toctree-l2"><a class="reference external" href="fields.html#string-field">String Field</a></li>
 <li class="toctree-l2"><a class="reference external" href="fields.html#coordinate-field">Coordinate Field</a></li>
+<li class="toctree-l2"><a class="reference external" href="fields.html#custom-field-types">Custom Field Types</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="fields.html#field-constraints">Field Constraints</a></li>
@@ -214,7 +248,7 @@ survey +name eric +age 15.4</pre>
         <li class="right" >
           <a href="fields.html" title="XForm Fields"
              >next</a> |</li>
-        <li><a href="#">rapidsms-xforms v0.1 documentation</a> &raquo;</li> 
+        <li><a href="#">rapidsms-xforms v0.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

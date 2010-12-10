@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>XForm Fields &mdash; rapidsms-xforms v0.1 documentation</title>
+    <title>XForm Fields &mdash; rapidsms-xforms v0.3.0 documentation</title>
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '0.1',
+        VERSION:     '0.3.0',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="rapidsms-xforms v0.1 documentation" href="index.html" />
+    <link rel="top" title="rapidsms-xforms v0.3.0 documentation" href="index.html" />
     <link rel="next" title="Signals" href="signals.html" />
     <link rel="prev" title="Introduction" href="index.html" /> 
   </head>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="index.html" title="Introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">rapidsms-xforms v0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">rapidsms-xforms v0.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -48,6 +48,7 @@
 <li><a class="reference external" href="#decimal-field">Decimal Field</a></li>
 <li><a class="reference external" href="#string-field">String Field</a></li>
 <li><a class="reference external" href="#coordinate-field">Coordinate Field</a></li>
+<li><a class="reference external" href="#custom-field-types">Custom Field Types</a></li>
 </ul>
 </li>
 <li><a class="reference external" href="#field-constraints">Field Constraints</a></li>
@@ -120,6 +121,62 @@ survey +comment well is in need of repair</pre>
 survey +track 1.5456 1.2355</pre>
 </div>
 </div>
+<div class="section" id="custom-field-types">
+<h2>Custom Field Types<a class="headerlink" href="#custom-field-types" title="Permalink to this headline">¶</a></h2>
+<p>You can also create custom field types, which can point either to your own domain objects or which just do specialized parsing before storing the value as a primitive.</p>
+<p>You can register fields using the <tt class="docutils literal"><span class="pre">register_field_type</span></tt> static method in XFormField.  The Coordinate (geopoint) field is actually implemented in this way, using the following code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">create_geopoint</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Used by our arbitrary field saving / lookup.  This takes the command and the string value representing</span>
+<span class="sd">    a geolocation and returns a Point location.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+       <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;+</span><span class="si">%s</span><span class="s"> parameter must be GPS coordinates in the format &#39;lat long&#39;&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;+</span><span class="si">%s</span><span class="s"> parameter must be GPS coordinates the format &#39;lat long&#39;&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+
+    <span class="c"># lat needs to be between -90 and 90</span>
+    <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">90</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;+</span><span class="si">%s</span><span class="s"> parameter has invalid latitude, must be between -90 and 90&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+
+    <span class="c"># lng needs to be between -180 and 180</span>
+    <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">180</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">180</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;+</span><span class="si">%s</span><span class="s"> parameter has invalid longitude, must be between -180 and 180&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+
+    <span class="c"># our cleaned value is the coordinates as a tuple</span>
+    <span class="n">cleaned_value</span> <span class="o">=</span> <span class="n">Point</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">longitude</span><span class="o">=</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">cleaned_value</span>
+
+<span class="c"># register geopoints as a type</span>
+<span class="n">XFormField</span><span class="o">.</span><span class="n">register_field_type</span><span class="p">(</span><span class="n">XFormField</span><span class="o">.</span><span class="n">TYPE_GEOPOINT</span><span class="p">,</span> <span class="s">&#39;GPS Coordinate&#39;</span><span class="p">,</span> <span class="n">create_geopoint</span><span class="p">,</span>
+                               <span class="n">xforms_type</span><span class="o">=</span><span class="s">&#39;geopoint&#39;</span><span class="p">,</span> <span class="n">db_type</span><span class="o">=</span><span class="n">XFormField</span><span class="o">.</span><span class="n">TYPE_OBJECT</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Alternatively, you could create a new field type to deal with custom formats.  The following is an example of a custom &#8216;timespan&#8217; field which parses time values in formats like &#8216;1day&#8217; or &#8216;6 months&#8217;, but stores the value in an ordinary integer field representing the number of days:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">parse_timespan</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses a timespan object in the format &#39;5days&#39; or &#39;6 months&#39;, returning the value as an integer</span>
+<span class="sd">    of the number of days represented by that timespan.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;(\d+)\W*months?&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="mi">30</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;(\d+)\W*days?&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> parameter value of &#39;</span><span class="si">%s</span><span class="s">&#39; is not a valid timespan.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+
+<span class="n">XFormField</span><span class="o">.</span><span class="n">register_field_type</span><span class="p">(</span><span class="s">&#39;timespan&#39;</span><span class="p">,</span> <span class="s">&#39;Timespan&#39;</span><span class="p">,</span> <span class="n">parse_timespan</span><span class="p">,</span>
+                               <span class="n">xforms_type</span><span class="o">=</span><span class="s">&#39;string&#39;</span><span class="p">,</span> <span class="n">db_type</span><span class="o">=</span><span class="n">XFormField</span><span class="o">.</span><span class="n">TYPE_INT</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
 </div>
 <div class="section" id="field-constraints">
 <h1>Field Constraints<a class="headerlink" href="#field-constraints" title="Permalink to this headline">¶</a></h1>
@@ -169,7 +226,7 @@ survey +track 1.5456 1.2355</pre>
         <li class="right" >
           <a href="index.html" title="Introduction"
              >previous</a> |</li>
-        <li><a href="index.html">rapidsms-xforms v0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">rapidsms-xforms v0.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
