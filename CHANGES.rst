@@ -4,6 +4,10 @@ Version History
 
 Many thanks to everyone who submits pull requests.  We'll merge in most changes that are unit tested and well thought out.
 
+0.4.1
+-----
+ - nicpottier: include formID in ODK form list, this won't fix issues with more than one form on ODK collect 1.1.7, but if they accept our patch then it will fix the single form issue.  see: http://code.google.com/p/opendatakit/issues/detail?id=324
+
 0.4.0
 -----
  - nicpottier: paginate submissions, about time
