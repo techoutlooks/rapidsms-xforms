@@ -367,7 +367,7 @@ class SubmissionTest(TestCase): #pragma: no cover
 
     def testCustomField(self):
         # register Users as being an XForm field
-        def lookup_user(command, username):
+        def lookup_user(command, username, raw=None, connection=None):
             return User.objects.get(username=username)
 
         XFormField.register_field_type('user', 'User', lookup_user, 
@@ -806,7 +806,7 @@ class SubmissionTest(TestCase): #pragma: no cover
         # Tests creating a field that is based on the connection of the message, not anything in the message
         # itself.
 
-        def parse_connection(command, value):
+        def parse_connection(command, value, raw=None, connection=None):
             # we should be able to find a connection with this identity
             matches = Connection.objects.filter(identity=value)
             if matches:
@@ -861,7 +861,7 @@ class SubmissionTest(TestCase): #pragma: no cover
         import re
 
         # register a time parser
-        def parse_timespan(command, value):
+        def parse_timespan(command, value, raw=None, connection=None):
             match = re.match("(\d+)\W*months?", value, re.IGNORECASE)
             if match:
                 return int(match.group(1))*30

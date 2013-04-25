@@ -224,10 +224,10 @@ class XForm(models.Model):
                 # of the key that contains their binary content
                 if typedef['xforms_type'] == 'binary':
                     binary_key = values[field.command]
-                    values[field.command] = typedef['parser'](field.command, binaries[binary_key], filename=binary_key)
+                    values[field.command] = typedef['parser'](field.command, binaries[binary_key], filename=binary_key, raw=None, connection=None)
 
                 else:
-                    values[field.command] = typedef['parser'](field.command, values[field.command])
+                    values[field.command] = typedef['parser'](field.command, values[field.command], raw=None, connection=None)
 
         # create our submission now
         submission = self.submissions.create(type='odk-www', raw=xml)
@@ -262,7 +262,7 @@ class XForm(models.Model):
         for field in self.fields.filter(datatype=XFormField.TYPE_OBJECT):
             if field.command in values:
                 typedef = XFormField.lookup_type(field.field_type)
-                values[field.command] = typedef['parser'](field.command, values[field.command])
+                values[field.command] = typedef['parser'](field.command, values[field.command], raw=raw, connection=connection)
 
         # create submission and update the values
         submission = self.submissions.create(type=TYPE_IMPORT, raw=raw, connection=connection)
@@ -399,7 +399,7 @@ class XForm(models.Model):
 
             # ok, this looks like a valid required field value, clean it up
             try:
-                cleaned = field.clean_submission(segment, submission_type)
+                cleaned = field.clean_submission(segment, submission_type, raw=message, connection=message_obj.connection)
                 values.append(dict(name=field.command, value=cleaned))
             except ValidationError as err:
                 errors.append(err)
@@ -457,7 +457,7 @@ class XForm(models.Model):
                     found = True
 
                     try:
-                        cleaned = field.clean_submission(value, submission_type)
+                        cleaned = field.clean_submission(value, submission_type, raw=message, connection=message_obj.connection)
                         values.append(dict(name=field.command, value=cleaned))        
                     except ValidationError as err:
                         errors.append(err)
@@ -472,7 +472,7 @@ class XForm(models.Model):
                     # try to parse it out
                     value = typedef['puller'](field.command, message_obj)
                     if not value is None:
-                        cleaned = field.clean_submission(value, submission_type)
+                        cleaned = field.clean_submission(value, submission_type, raw=message, connection=message_obj.connection)
                         values.append(dict(name=field.command, value=cleaned))
                 except ValidationError as err:
                     errors.append(err)
@@ -769,7 +769,7 @@ class XFormField(Attribute):
         self.derive_datatype()
         return super(XFormField, self).save(force_insert, force_update, using)
 
-    def clean_submission(self, value, submission_type):
+    def clean_submission(self, value, submission_type, raw=None, connection=None):
         """
         Takes the passed in string value and does two steps:
 
@@ -808,7 +808,7 @@ class XFormField(Attribute):
             # something custom, pass it to our parser
             else:
                 typedef = XFormField.lookup_type(self.field_type)
-                cleaned_value = typedef['parser'](self.command, value)
+                cleaned_value = typedef['parser'](self.command, value, raw=raw, connection=connection)
 
         # now check our actual constraints if any
         for constraint in self.constraints.order_by('order'):
@@ -1076,7 +1076,7 @@ class BinaryValue(models.Model):
 
 xform_received = django.dispatch.Signal(providing_args=["xform", "submission"])
 
-def create_binary(command, value, filename="binary"):
+def create_binary(command, value, filename="binary", raw=None, connection=None):
     """
     Save the image to our filesystem, associating a new object to hold it's contents etc..
     """
@@ -1097,7 +1097,7 @@ XFormField.register_field_type(XFormField.TYPE_AUDIO, 'Audio', create_binary,
 XFormField.register_field_type(XFormField.TYPE_VIDEO, 'Video', create_binary,
                                xforms_type='binary', db_type=XFormField.TYPE_OBJECT, xform_only=True)
 
-def create_geopoint(command, value):
+def create_geopoint(command, value, raw=None, connection=None):
     """
     Used by our arbitrary field saving / lookup.  This takes the command and the string value representing
     a geolocation and return a Point location.
