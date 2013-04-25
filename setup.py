@@ -9,13 +9,8 @@ setup(
         "django>=1.5",
         "rapidsms==0.9.6a",
         "django-uni-form==0.8.0",
-        "django-eav==0.9.2",
         "python-digest==1.7",
         "django-digest==1.13"
-    ],
-
-    dependency_links = [
-        "https://github.com/mvpdev/django-eav/tarball/master#egg=django-eav-0.9.2"
     ],
 
     description='Interactive form builder for both XForms and SMS submissions into RapidSMS',
