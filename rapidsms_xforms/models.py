@@ -82,6 +82,12 @@ class XForm(models.Model):
         super(XForm, self).__init__(*args, **kwargs)
         self.__original_keyword = self.keyword
 
+    def get_extra_keywords(self):
+        return self.keyword.split()[1:]
+
+    def get_primary_keyword(self):
+        return self.keyword.split()[0]
+
     @classmethod
     def find_form(cls, message):
         """
@@ -127,38 +133,38 @@ class XForm(models.Model):
         # remove leading and trailing whitespace
         message = message.strip()
 
-        # empty string case
-        if message.lower() == self.keyword.lower():
-            return ""
+        for keyword in self.keyword.split():
 
-        # our default regex to match keywords
-        regex = "^[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
+            # empty string case
+            if message.lower() == keyword.lower():
+                return ""
 
-        # modify it if there is a keyword prefix
-        # with a keyword prefix of '+', we want to match cases like:
-        #       +survey,  + survey, ++survey +,survey
-        if self.keyword_prefix:
-            regex = "^[^0-9a-z]*" + re.escape(self.keyword_prefix) + "+[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
+            # our default regex to match keywords
+            regex = "^[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
 
-        # run our regular expression to extract our keyword
-        match = re.match(regex, message, re.IGNORECASE)
+            # modify it if there is a keyword prefix
+            # with a keyword prefix of '+', we want to match cases like:
+            #       +survey,  + survey, ++survey +,survey
+            if self.keyword_prefix:
+                regex = "^[^0-9a-z]*" + re.escape(self.keyword_prefix) + "+[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
 
-        # if this in a format we don't understand, return nothing
-        if not match:
-            return None
+            # run our regular expression to extract our keyword
+            match = re.match(regex, message, re.IGNORECASE)
+                
+            # if this in a format we don't understand, return nothing
+            if not match:
+                continue
 
-        # by default only match things that are exact
-        target_distance = 0
-        if fuzzy:
-            target_distance = 1
+            # by default only match things that are exact
+            target_distance = 0
+            if fuzzy:
+                target_distance = 1
 
-        keyword = match.group(1)
-        if dl_distance(unicode(keyword.lower()), unicode(self.keyword.lower())) <= target_distance:
-            return match.group(2)
+            first_word = match.group(1)
+            if dl_distance(unicode(first_word.lower()), unicode(keyword.lower())) <= target_distance:
+                return match.group(2)
 
-        # otherwise, return that we don't match this message
-        else:
-            return None
+        return None
 
     def update_submission_from_dict(self, submission, values):
         """

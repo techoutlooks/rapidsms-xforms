@@ -20,6 +20,9 @@ DATABASES = {
     }
 }
 
+import os
+PROJECT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)))
+TEMPLATE_DIRS = (os.path.join(PROJECT_DIR, './templates'),)
 
 # the rapidsms backend configuration is designed to resemble django's
 # database configuration, as a nested dict of (name, configuration).

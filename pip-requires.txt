@@ -1,5 +1,5 @@
-django
--e git+http://github.com/rapidsms/rapidsms.git#egg=rapidsms
+Django==1.5.1
+RapidSMS==0.9.6a
 -e git+http://github.com/nyaruka/django-eav.git#egg=django-eav
 django-uni-form==0.8.0
 python-digest

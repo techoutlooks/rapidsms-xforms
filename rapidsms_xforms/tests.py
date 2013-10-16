@@ -455,11 +455,11 @@ class SubmissionTest(TestCase): #pragma: no cover
         self.failUnlessEqual(submission.response, "You recorded an age of 10 and a gender of male.   Thanks.")
 
         # make sure template arguments work
-        self.xform.response = "The two values together are: {{ age|add:gender }}."
+        self.xform.response = "The two values together are: {{ gender|center:age }}."
         self.xform.save()
 
         submission = self.xform.process_sms_submission(IncomingMessage(None, "survey male 10"))
-        self.failUnlessEqual(submission.response, "The two values together are: 10.")
+        self.failUnlessEqual(submission.response, "The two values together are:    male   .")
 
         # assert we don't let forms save with templates that fail
         self.xform.response = "You recorded an age of {{ bad template }}"
@@ -662,6 +662,13 @@ class SubmissionTest(TestCase): #pragma: no cover
 
         # shouldn't pass, edit distance of 2
         self.assertEquals(None, XForm.find_form("furvey1 hello world"))
+
+        # add a new keyword to surve form
+        surve_form.keyword = "surve research"
+        surve_form.save()
+
+        self.assertEquals(surve_form, XForm.find_form("surve hello world"))
+        self.assertEquals(surve_form, XForm.find_form("research hello world"))
 
         surve_form.delete()
 
