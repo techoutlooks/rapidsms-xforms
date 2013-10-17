@@ -80,7 +80,7 @@ class XForm(models.Model):
         the user changes the keyword we need to remap all the slugs for our fields as well.
         """
         super(XForm, self).__init__(*args, **kwargs)
-        self.__original_keyword = self.keyword
+        self.__original_keyword = self.get_primary_keyword()
 
     def get_extra_keywords(self):
         return self.keyword.split()[1:]
@@ -325,8 +325,8 @@ class XForm(models.Model):
         # parse out our keyword
         remainder = self.parse_keyword(message)
         if remainder is None:
-            errors.append(ValidationError("Incorrect keyword.  Keyword must be '%s'" % self.keyword))
-            submission['response'] = "Incorrect keyword.  Keyword must be '%s'" % self.keyword
+            errors.append(ValidationError("Incorrect keyword.  Keyword must be '%s'" % self.get_primary_keyword()))
+            submission['response'] = "Incorrect keyword.  Keyword must be '%s'" % self.get_primary_keyword()
             return submission
 
         # separator mode means we don't split on spaces
@@ -665,7 +665,7 @@ class XForm(models.Model):
 
         # keyword has changed, load all our fields and update their slugs
         # TODO, damnit, is this worth it?
-        if self.keyword != self.__original_keyword:
+        if self.get_primary_keyword() != self.__original_keyword:
             for field in self.fields.all():
                 field.save(force_update=True, using=using)
                         
@@ -758,8 +758,7 @@ class XFormField(Attribute):
         We map our field_type to the appropriate data_type here.
         """
         # set our slug based on our command and keyword
-        self.slug = "%s_%s" % (self.xform.keyword, EavSlugField.create_slug_from_name(self.command))
-
+        self.slug = "%s_%s" % (self.xform.get_primary_keyword(), EavSlugField.create_slug_from_name(self.command))
         typedef = self.lookup_type(self.field_type)
 
         if not typedef:
