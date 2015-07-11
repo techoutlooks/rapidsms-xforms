@@ -6,8 +6,8 @@ setup(
     license="BSD",
 
     install_requires = [
-        "django>=1.5",
-        "rapidsms==0.9.6a",
+        "Django==1.8.2",
+        "RapidSMS==0.19.0",
         "django-uni-form==0.8.0",
         "python-digest==1.7",
         "django-digest==1.13"
