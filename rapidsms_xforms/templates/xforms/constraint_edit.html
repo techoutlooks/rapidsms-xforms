@@ -3,5 +3,5 @@
 
 <form method="post" action="/xforms/{{xform.pk}}/field/{{field.pk}}/constraint/">
 	{{ form.type }} {{ form.test }} {{ form.message }} 
-	<button type="submit" id="save_constraint"><img src="{% static 'rapidsms/icons/silk/accept--dull.png' %}"/><div>Save</div></button>
+	<button class="glyphicon glyphicon-floppy-saved" type="submit" id="save_constraint"></button>
 </form>

@@ -1,7 +1,7 @@
 from threading import Lock
 from decimal import Decimal
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.db import models
 from django.db import connections, router, transaction, DEFAULT_DB_ALIAS
 from eav.models import Attribute, Value
@@ -650,9 +650,9 @@ class XForm(models.Model):
 
             t.render(Context(context))
         except Exception as e:
-            raise ValidationError(str(e))
-
-    def full_clean(self, exclude=None):
+            raise ValidationError(str(e))  
+            
+    def full_clean(self, exclude=None, validate_unique=False):
         self.check_template(self.response)
         return super(XForm, self).full_clean(exclude)
 
@@ -753,7 +753,7 @@ class XFormField(Attribute):
         if otype in XFormField.TYPE_CHOICES:
             return XFormField.TYPE_CHOICES[otype]
         else:
-            raise ValidationError("Unable to find parser for field: '%s'" % otype)
+            raise ValidationError({NON_FIELD_ERRORS: ["Unable to find parser for field: {0}".format('%s' %otype)]})
 
     def derive_datatype(self):
         """
@@ -764,11 +764,15 @@ class XFormField(Attribute):
         typedef = self.lookup_type(self.field_type)
 
         if not typedef:
-            raise ValidationError("Field '%s' has an unknown data type: %s" % (self.command, self.datatype))
+           raise ValidationError({
+                NON_FIELD_ERRORS: [
+                    "Field {0} has an unknown data type: {1}".format(self.command, self.datatype),
+                ],
+           })
 
         self.datatype = typedef['db_type']
 
-    def full_clean(self, exclude=None):
+    def full_clean(self, exclude=None, validate_unique=False):
         self.derive_datatype()
         return super(XFormField, self).full_clean(['datatype'])
 
@@ -1005,7 +1009,7 @@ class XFormSubmission(models.Model):
 
     def submission_values(self):
         if getattr(self, '_values', None) is None:
-            self._values = self.values.all().select_related(depth=1)
+            self._values = self.values.all().select_related()
 
         return self._values
 
@@ -1095,6 +1099,18 @@ def create_binary(command, value, filename="binary", raw=None, connection=None):
     binary.save()
     return binary
 
+
+
+
+
+
+
+
+
+
+XFormField.register_field_type(XFormField.TYPE_TEXT, 'String', create_binary,
+                               xforms_type='string', db_type=XFormField.TYPE_OBJECT, xform_only=True)
+                               
 XFormField.register_field_type(XFormField.TYPE_IMAGE, 'Image', create_binary,
                                xforms_type='binary', db_type=XFormField.TYPE_OBJECT, xform_only=True)
 

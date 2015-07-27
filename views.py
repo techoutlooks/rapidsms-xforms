@@ -27,7 +27,7 @@ def submissions_as_csv(req, pk):
     resp = render_to_response(
         "xforms/submissions.csv", 
         {'xform': xform, 'submissions': submissions, 'fields': fields},
-        content_type="text/csv",
+        mimetype="text/csv",
         context_instance=RequestContext(req))
     resp['Content-Disposition'] = 'attachment;filename="%s.csv"' % xform.keyword
     return resp
@@ -49,7 +49,7 @@ def odk_list_forms(req):
     return render_to_response(
         "xforms/odk_list_forms.xml", 
         { 'xforms': xforms, 'host':  settings.XFORMS_HOST }, 
-        content_type="text/xml",
+        mimetype="text/xml",
         context_instance=RequestContext(req))
 
 @require_GET
@@ -66,7 +66,7 @@ def odk_get_form(req, pk):
     
     resp = render_to_response(
         "xforms/odk_get_form.xml", { 'xform': xform }, 
-        content_type="text/xml",
+        mimetype="text/xml",
         context_instance=RequestContext(req))
     resp['Content-Disposition'] = 'attachment;filename="%s.xml"' % xform.keyword
     return resp
@@ -564,13 +564,13 @@ def order_constraints (req, form_id, field_id):
             context_instance=RequestContext(req))
 
 
-add_button = ({ "image" : "../../../../../static/rapidsms/icons/silk/decline.png", 'click' : 'cancelAdd'}, 
-              { "text" : "Add", "image" : "../../../../../static/rapidsms/icons/silk/add.png", 'click' : 'add'},)
+add_button = ({ "image" : "rapidsms/icons/silk/decline.png", 'click' : 'cancelAdd'}, 
+              { "text" : "Add", "image" : "rapidsms/icons/silk/add.png", 'click' : 'add'},)
 
 save_button = ( { "image" : "rapidsms/icons/silk/decline.png", 'click' : 'cancelSave'},
-                { "text" : "Save", "image" : "../../../../../static/rapidsms_xforms/icons/silk/bullet_disk.png", 'click' : 'saveRow'},)
-constraint_buttons = ({"image" : "../../../../../static/rapidsms_xforms/icons/silk/delete.png", 'click' : 'deleteRow'},
-                      { "text" : "Edit", "image" : "../../../../../static/rapidsms_xforms/icons/silk/pencil.png", 'click' : 'editRow'},)
+                { "text" : "Save", "image" : "rapidsms_xforms/icons/silk/bullet_disk.png", 'click' : 'saveRow'},)
+constraint_buttons = ({"image" : "rapidsms/icons/silk/delete.png", 'click' : 'deleteRow'},
+                      { "text" : "Edit", "image" : "rapidsms_xforms/icons/silk/pencil.png", 'click' : 'editRow'},)
 constraint_columns = (('Type', 'type'), ('Test', 'test'), ('Message', 'message'))
 
 

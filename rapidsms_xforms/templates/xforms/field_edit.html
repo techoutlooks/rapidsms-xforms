@@ -21,42 +21,41 @@
 <form class="form" action="/xforms/{{ xform.pk }}/add_field/" method="post">
 {% endif %}
 
-<table class="field_table" width="100%" id="{{field.pk}}">
-<tbody>
-<tr>
-<td class="field_name_col">
-  {% if field %}
-  
-  {% endif %} {{ form.name }} {{ form.name.errors}}</td>
-<td class="field_type_col">{{ form.field_type }} {{ form.field_type.errors }}</td>
-<td class="field_command_col">{{ form.command }} {{form.command.errors}}</td>
-<td class="field_description_col">{{ form.description }} {{ form.description.errors }}</td>
-<td class="field_options_col">
-  
-  {% if field %}
 
-  <a style="float:right;padding-top:7px;" href="javascript:void(0);"><img onclick="cancelField(this);" src="{% static 'rapidsms/icons/silk/decline.png' %}" alt="" border="0"/></a>
-  
-  <div class="buttons">
-    <a onclick="saveField(this);" href="javascript:void(0);" id="save_{{field.pk}}">
-      <img src="{% static 'rapidsms_xforms/icons/silk/bullet_disk.png' %}" alt=""/>Save
-    </a>
-  </div>
+<div class="panel panel-default">
+  <!-- Default panel contents -->
+  <div class="panel-heading"></div>
+  <div class="panel-body">
+    <p>
+                  {% if field %}
+                  <a class="glyphicon glyphicon-floppy-remove" onclick="cancelField(this);" role="button">Cancel</a> &nbsp;&nbsp;
+                  <a id="save_{{field.pk}}" class="glyphicon glyphicon-floppy-disk" onclick="saveField(this);" href="javascript:void(0);" id="save_{{field.pk}}">Save</a>
 
-  {% else %}
-  
-  <a href="javascript:void(0);"><img onclick="cancelAdd(this);" style="float:right;padding-top:6px;" src="{% static 'rapidsms/icons/silk/decline.png' %}" alt="" border="0"/></a>
-  
-  <div class="buttons">
-    <a onclick="saveField(this);" href="javascript:void(0);" id="save_{{field.pk}}" class="positive">
-      <img src="{% static 'rapidsms/icons/silk/add.png' %}" alt=""/>Add
-    </a>
+
+                  {% else %}
+                  <a class="glyphicon glyphicon-thumbs-down" onclick="cancelAdd(this);" role="button">Cancel</a> &nbsp;&nbsp; 
+                  <a id="save_{{field.pk}}" class="positive glyphicon glyphicon-plus-signk" onclick="saveField(this);" href="javascript:void(0);" id="save_{{field.pk}}">Save</a>             
+                  {% endif %}
+    </p>
   </div>
-  {% endif %}
-  </td>
-</tr>
-</tbody>
-</table>
+        <table class="table field_table" width="100%" id="{{field.pk}}">
+            <tbody>
+                <tr>
+                <td class="field_name_col">
+                  {% if field %}
+                  
+                  {% endif %} {{ form.name }} {{ form.name.errors}}</td>
+                <td class="field_type_col">{{ form.field_type }} {{ form.field_type.errors }}</td>
+                <td class="field_command_col">{{ form.command }} {{form.command.errors}}</td>
+                <td class="field_description_col">{{ form.description }} {{ form.description.errors }}</td>
+                <td class="field_options_col">
+                  
+
+                  </td>
+                </tr>
+            </tbody>
+        </table>
+  </div>
 </form>
 
 </div>
