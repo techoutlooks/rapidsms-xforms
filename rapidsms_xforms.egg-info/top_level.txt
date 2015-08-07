@@ -1,2 +1,4 @@
+management
 rapidsms_xforms
+templatetags
 test-runner

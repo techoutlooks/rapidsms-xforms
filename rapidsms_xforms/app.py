@@ -4,10 +4,8 @@ from rapidsms.apps.base import AppBase
 from .models import XForm
 
 class App (AppBase):
+    def start(self): pass
 
-    def start(self): 
-        pass
-        
     def handle (self, message):
         # see if this message matches any of our forms
         form = XForm.find_form(message.text)
@@ -19,4 +17,4 @@ class App (AppBase):
             return True
 
         return False
-
+        

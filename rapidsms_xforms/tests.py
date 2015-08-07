@@ -367,7 +367,7 @@ class SubmissionTest(TestCase): #pragma: no cover
 
     def testCustomField(self):
         # register Users as being an XForm field
-        def lookup_user(command, username, raw=None, connection=None):
+        def lookup_user(command, username):
             return User.objects.get(username=username)
 
         XFormField.register_field_type('user', 'User', lookup_user, 
@@ -455,11 +455,11 @@ class SubmissionTest(TestCase): #pragma: no cover
         self.failUnlessEqual(submission.response, "You recorded an age of 10 and a gender of male.   Thanks.")
 
         # make sure template arguments work
-        self.xform.response = "The two values together are: {{ gender|center:age }}."
+        self.xform.response = "The two values together are: {{ age|add:gender }}."
         self.xform.save()
 
         submission = self.xform.process_sms_submission(IncomingMessage(None, "survey male 10"))
-        self.failUnlessEqual(submission.response, "The two values together are:    male   .")
+        self.failUnlessEqual(submission.response, "The two values together are: 10.")
 
         # assert we don't let forms save with templates that fail
         self.xform.response = "You recorded an age of {{ bad template }}"
@@ -663,13 +663,6 @@ class SubmissionTest(TestCase): #pragma: no cover
         # shouldn't pass, edit distance of 2
         self.assertEquals(None, XForm.find_form("furvey1 hello world"))
 
-        # add a new keyword to surve form
-        surve_form.keyword = "surve research"
-        surve_form.save()
-
-        self.assertEquals(surve_form, XForm.find_form("surve hello world"))
-        self.assertEquals(surve_form, XForm.find_form("research hello world"))
-
         surve_form.delete()
 
         # wrong keyword
@@ -813,7 +806,7 @@ class SubmissionTest(TestCase): #pragma: no cover
         # Tests creating a field that is based on the connection of the message, not anything in the message
         # itself.
 
-        def parse_connection(command, value, raw=None, connection=None):
+        def parse_connection(command, value):
             # we should be able to find a connection with this identity
             matches = Connection.objects.filter(identity=value)
             if matches:
@@ -868,7 +861,7 @@ class SubmissionTest(TestCase): #pragma: no cover
         import re
 
         # register a time parser
-        def parse_timespan(command, value, raw=None, connection=None):
+        def parse_timespan(command, value):
             match = re.match("(\d+)\W*months?", value, re.IGNORECASE)
             if match:
                 return int(match.group(1))*30

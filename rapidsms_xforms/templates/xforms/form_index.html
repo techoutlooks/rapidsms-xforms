@@ -1,10 +1,9 @@
 {% extends "xforms/layout.html" %}
-{% load i18n %}
 {% load staticfiles %}
 
 {% block title %}XForms{% endblock %}
 
-{% block content %}
+
 
 <script type="text/javascript">
 function deleteForm(form_id, form_name) {
@@ -15,6 +14,7 @@ function deleteForm(form_id, form_name) {
 }
 </script>
 
+{% block right %}
 <table width="100%" class="form_table"> 
   <thead> 
     <tr> 
@@ -55,7 +55,7 @@ function deleteForm(form_id, form_name) {
 
 <div class="buttons"> 
     <a href="/xforms/new/" style="float:left"> 
-      <img border="0" src="/static/rapidsms/icons/silk/add.png" alt=""/>Add New Form
+      <img border="0" src="{% static 'rapidsms/icons/silk/add.png' %}" alt=""/>Add New Form
     </a> 
 </div> 
 <br class="clear"/>
@@ -65,5 +65,4 @@ function deleteForm(form_id, form_name) {
 <form name="form" method="post" action="/xforms/">
 {% csrf_token %}
 </form>
-
 {% endblock %}

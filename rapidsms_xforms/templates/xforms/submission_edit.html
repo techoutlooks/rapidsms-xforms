@@ -1,7 +1,4 @@
 {% extends "xforms/layout.html" %}
-{% load i18n %}
-{% load staticfiles %}
-
 {% block title %}XForms{% endblock %}
 
 {% block content %}
@@ -24,15 +21,9 @@
 <fieldset>
 {{ form|as_uni_form }}
 
-<div class="buttons" style="float:left;margin-bottom:10px;margin-top:10px">
-  <a href="/xforms/{{ xform.pk }}/submissions" class="negative">
-    <img src="{% static 'rapidsms/icons/silk/decline.png' %}" alt=""/> 
-    Cancel
-  </a>
-  <a onclick="$('#subForm').submit();" href="javascript:void(0);">
-    <img src="{% static 'rapidsms_xforms/icons/silk/disk.png' %}" alt=""/> 
-    Save Submission
-  </a>
+<div class="buttons" style="float:left;margin-bottom:10px;margin-top:20px">
+  <a href="/xforms/{{ xform.pk }}/submissions" class="btn btn-default" role="button">Cancel</a>
+  <a onclick="$('#subForm').submit();" href="javascript:void(0);" class="btn btn-default" role="button">Save</a>
 </div>
 
 </fieldset>

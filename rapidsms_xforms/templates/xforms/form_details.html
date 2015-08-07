@@ -1,13 +1,10 @@
-{% load i18n %}
-{% load staticfiles %}
-
-<div class="buttons">
+ <div class="buttons">
     <a onclick="editFormDetails('{{xform.pk}}');" href="javascript:void(0);">
-        <img src="{% static 'rapidsms_xforms/icons/silk/pencil.png' %}" alt=""/> 
+        <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/pencil.png" alt=""/> 
         Edit
     </a>
     <a href="/xforms/odk/get/{{ xform.pk }}/">
-        <img src="{% static 'rapidsms_xforms/icons/silk/application_form.png' %}" alt=""/> 
+        <img src="{{ MEDIA_URL }}rapidsms_xforms/icons/silk/application_form.png" alt=""/> 
         XForm
     </a>
     </div>

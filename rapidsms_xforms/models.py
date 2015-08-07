@@ -1,7 +1,7 @@
 from threading import Lock
 from decimal import Decimal
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import connections, router, transaction, DEFAULT_DB_ALIAS
 from eav.models import Attribute, Value
@@ -19,8 +19,6 @@ from eav.fields import EavSlugField
 from django.core.files.base import ContentFile
 from django.contrib.auth.models import Group
 from django.conf import settings
-
-getlistitem = lambda l,i: l[i] if l else None
 
 class XForm(models.Model):
     """
@@ -59,7 +57,7 @@ class XForm(models.Model):
     separator = models.CharField(max_length=1, choices=SEPARATOR_CHOICES, null=True, blank=True,
                                  help_text="The separator character for fields, field values will be split on this character.")
 
-    restrict_to = models.ManyToManyField(Group, blank=True,
+    restrict_to = models.ManyToManyField(Group, null=True, blank=True,
                                          help_text="Restrict submissions to users of this group (if unset, anybody can submit this form)")
     restrict_message = models.CharField(max_length=160, null=True, blank=True,
                                         help_text="The error message that will be returned to users if they do not have the right privileges to submit this form.  Only required if the field is restricted.")
@@ -82,13 +80,7 @@ class XForm(models.Model):
         the user changes the keyword we need to remap all the slugs for our fields as well.
         """
         super(XForm, self).__init__(*args, **kwargs)
-        self.__original_keyword = self.get_primary_keyword()
-
-    def get_extra_keywords(self):
-        return self.keyword.split()[1:]
-
-    def get_primary_keyword(self):
-        return getlistitem(self.keyword.split(), 0)
+        self.__original_keyword = self.keyword
 
     @classmethod
     def find_form(cls, message):
@@ -135,38 +127,38 @@ class XForm(models.Model):
         # remove leading and trailing whitespace
         message = message.strip()
 
-        for keyword in self.keyword.split():
+        # empty string case
+        if message.lower() == self.keyword.lower():
+            return ""
 
-            # empty string case
-            if message.lower() == keyword.lower():
-                return ""
+        # our default regex to match keywords
+        regex = "^[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
 
-            # our default regex to match keywords
-            regex = "^[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
+        # modify it if there is a keyword prefix
+        # with a keyword prefix of '+', we want to match cases like:
+        #       +survey,  + survey, ++survey +,survey
+        if self.keyword_prefix:
+            regex = "^[^0-9a-z]*" + re.escape(self.keyword_prefix) + "+[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
 
-            # modify it if there is a keyword prefix
-            # with a keyword prefix of '+', we want to match cases like:
-            #       +survey,  + survey, ++survey +,survey
-            if self.keyword_prefix:
-                regex = "^[^0-9a-z]*" + re.escape(self.keyword_prefix) + "+[^0-9a-z]*([0-9a-z]+)[^0-9a-z](.*)"
+        # run our regular expression to extract our keyword
+        match = re.match(regex, message, re.IGNORECASE)
 
-            # run our regular expression to extract our keyword
-            match = re.match(regex, message, re.IGNORECASE)
-                
-            # if this in a format we don't understand, return nothing
-            if not match:
-                continue
+        # if this in a format we don't understand, return nothing
+        if not match:
+            return None
 
-            # by default only match things that are exact
-            target_distance = 0
-            if fuzzy:
-                target_distance = 1
+        # by default only match things that are exact
+        target_distance = 0
+        if fuzzy:
+            target_distance = 1
 
-            first_word = match.group(1)
-            if dl_distance(unicode(first_word.lower()), unicode(keyword.lower())) <= target_distance:
-                return match.group(2)
+        keyword = match.group(1)
+        if dl_distance(unicode(keyword.lower()), unicode(self.keyword.lower())) <= target_distance:
+            return match.group(2)
 
-        return None
+        # otherwise, return that we don't match this message
+        else:
+            return None
 
     def update_submission_from_dict(self, submission, values):
         """
@@ -232,10 +224,10 @@ class XForm(models.Model):
                 # of the key that contains their binary content
                 if typedef['xforms_type'] == 'binary':
                     binary_key = values[field.command]
-                    values[field.command] = typedef['parser'](field.command, binaries[binary_key], filename=binary_key, raw=None, connection=None)
+                    values[field.command] = typedef['parser'](field.command, binaries[binary_key], filename=binary_key)
 
                 else:
-                    values[field.command] = typedef['parser'](field.command, values[field.command], raw=None, connection=None)
+                    values[field.command] = typedef['parser'](field.command, values[field.command])
 
         # create our submission now
         submission = self.submissions.create(type='odk-www', raw=xml)
@@ -270,7 +262,7 @@ class XForm(models.Model):
         for field in self.fields.filter(datatype=XFormField.TYPE_OBJECT):
             if field.command in values:
                 typedef = XFormField.lookup_type(field.field_type)
-                values[field.command] = typedef['parser'](field.command, values[field.command], raw=raw, connection=connection)
+                values[field.command] = typedef['parser'](field.command, values[field.command])
 
         # create submission and update the values
         submission = self.submissions.create(type=TYPE_IMPORT, raw=raw, connection=connection)
@@ -327,8 +319,8 @@ class XForm(models.Model):
         # parse out our keyword
         remainder = self.parse_keyword(message)
         if remainder is None:
-            errors.append(ValidationError("Incorrect keyword.  Keyword must be '%s'" % self.get_primary_keyword()))
-            submission['response'] = "Incorrect keyword.  Keyword must be '%s'" % self.get_primary_keyword()
+            errors.append(ValidationError("Incorrect keyword.  Keyword must be '%s'" % self.keyword))
+            submission['response'] = "Incorrect keyword.  Keyword must be '%s'" % self.keyword
             return submission
 
         # separator mode means we don't split on spaces
@@ -407,7 +399,7 @@ class XForm(models.Model):
 
             # ok, this looks like a valid required field value, clean it up
             try:
-                cleaned = field.clean_submission(segment, submission_type, raw=message, connection=message_obj.connection)
+                cleaned = field.clean_submission(segment, submission_type)
                 values.append(dict(name=field.command, value=cleaned))
             except ValidationError as err:
                 errors.append(err)
@@ -465,7 +457,7 @@ class XForm(models.Model):
                     found = True
 
                     try:
-                        cleaned = field.clean_submission(value, submission_type, raw=message, connection=message_obj.connection)
+                        cleaned = field.clean_submission(value, submission_type)
                         values.append(dict(name=field.command, value=cleaned))        
                     except ValidationError as err:
                         errors.append(err)
@@ -480,7 +472,7 @@ class XForm(models.Model):
                     # try to parse it out
                     value = typedef['puller'](field.command, message_obj)
                     if not value is None:
-                        cleaned = field.clean_submission(value, submission_type, raw=message, connection=message_obj.connection)
+                        cleaned = field.clean_submission(value, submission_type)
                         values.append(dict(name=field.command, value=cleaned))
                 except ValidationError as err:
                     errors.append(err)
@@ -650,8 +642,8 @@ class XForm(models.Model):
 
             t.render(Context(context))
         except Exception as e:
-            raise ValidationError(str(e))  
-            
+            raise ValidationError(str(e))
+
     def full_clean(self, exclude=None, validate_unique=False):
         self.check_template(self.response)
         return super(XForm, self).full_clean(exclude)
@@ -667,7 +659,7 @@ class XForm(models.Model):
 
         # keyword has changed, load all our fields and update their slugs
         # TODO, damnit, is this worth it?
-        if self.get_primary_keyword() != self.__original_keyword:
+        if self.keyword != self.__original_keyword:
             for field in self.fields.all():
                 field.save(force_update=True, using=using)
                         
@@ -753,22 +745,19 @@ class XFormField(Attribute):
         if otype in XFormField.TYPE_CHOICES:
             return XFormField.TYPE_CHOICES[otype]
         else:
-            raise ValidationError({NON_FIELD_ERRORS: ["Unable to find parser for field: {0}".format('%s' %otype)]})
+            raise ValidationError("Unable to find parser for field: '%s'" % otype)
 
     def derive_datatype(self):
         """
         We map our field_type to the appropriate data_type here.
         """
         # set our slug based on our command and keyword
-        self.slug = "%s_%s" % (self.xform.get_primary_keyword(), EavSlugField.create_slug_from_name(self.command))
+        self.slug = "%s_%s" % (self.xform.keyword, EavSlugField.create_slug_from_name(self.command))
+
         typedef = self.lookup_type(self.field_type)
 
         if not typedef:
-           raise ValidationError({
-                NON_FIELD_ERRORS: [
-                    "Field {0} has an unknown data type: {1}".format(self.command, self.datatype),
-                ],
-           })
+            raise ValidationError("Field '%s' has an unknown data type: %s" % (self.command, self.datatype))
 
         self.datatype = typedef['db_type']
 
@@ -780,7 +769,7 @@ class XFormField(Attribute):
         self.derive_datatype()
         return super(XFormField, self).save(force_insert, force_update, using)
 
-    def clean_submission(self, value, submission_type, raw=None, connection=None):
+    def clean_submission(self, value, submission_type):
         """
         Takes the passed in string value and does two steps:
 
@@ -819,7 +808,7 @@ class XFormField(Attribute):
             # something custom, pass it to our parser
             else:
                 typedef = XFormField.lookup_type(self.field_type)
-                cleaned_value = typedef['parser'](self.command, value, raw=raw, connection=connection)
+                cleaned_value = typedef['parser'](self.command, value)
 
         # now check our actual constraints if any
         for constraint in self.constraints.order_by('order'):
@@ -1009,7 +998,7 @@ class XFormSubmission(models.Model):
 
     def submission_values(self):
         if getattr(self, '_values', None) is None:
-            self._values = self.values.all().select_related()
+            self._values = self.values.all().select_related('submission')
 
         return self._values
 
@@ -1087,7 +1076,7 @@ class BinaryValue(models.Model):
 
 xform_received = django.dispatch.Signal(providing_args=["xform", "submission"])
 
-def create_binary(command, value, filename="binary", raw=None, connection=None):
+def create_binary(command, value, filename="binary"):
     """
     Save the image to our filesystem, associating a new object to hold it's contents etc..
     """
@@ -1099,18 +1088,6 @@ def create_binary(command, value, filename="binary", raw=None, connection=None):
     binary.save()
     return binary
 
-
-
-
-
-
-
-
-
-
-XFormField.register_field_type(XFormField.TYPE_TEXT, 'String', create_binary,
-                               xforms_type='string', db_type=XFormField.TYPE_OBJECT, xform_only=True)
-                               
 XFormField.register_field_type(XFormField.TYPE_IMAGE, 'Image', create_binary,
                                xforms_type='binary', db_type=XFormField.TYPE_OBJECT, xform_only=True)
 
@@ -1120,7 +1097,7 @@ XFormField.register_field_type(XFormField.TYPE_AUDIO, 'Audio', create_binary,
 XFormField.register_field_type(XFormField.TYPE_VIDEO, 'Video', create_binary,
                                xforms_type='binary', db_type=XFormField.TYPE_OBJECT, xform_only=True)
 
-def create_geopoint(command, value, raw=None, connection=None):
+def create_geopoint(command, value):
     """
     Used by our arbitrary field saving / lookup.  This takes the command and the string value representing
     a geolocation and return a Point location.
@@ -1264,4 +1241,3 @@ def profile_connection_lookup(connection):
         return profile.user
     else:
         return None
-

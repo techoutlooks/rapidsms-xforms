@@ -1,9 +1,6 @@
-{% load i18n %}
-{% load staticfiles %}
-
 {% load prop %}
 {% load dumper %}
-
+{% load staticfiles %}
 
 
 <div class="field_box">
@@ -40,14 +37,14 @@
     {% if button.text %}
       <div class="buttons" >
         <a onclick="{{button.click}}(this);" href="javascript:void(0);">
-        <img src="{{button.image}}" alt=""/> 
+        <img src="{{ MEDIA_URL }}{{button.image}}" alt=""/> 
         {{button.text}}
         </a>
       </div>
     
     {% else %}
       <a style="float:right" onclick="{{button.click}}(this);" href="javascript:void(0);">
-        <img border="0" style="padding-top:7px;" src="{{button.image}}" alt=""/> 
+        <img border="0" style="padding-top:7px;" src="{{ MEDIA_URL }}{{button.image}}" alt=""/> 
       </a>
     {% endif %}
 
